@@ -1,0 +1,37 @@
+{
+  "name": "reflection",
+  "productName": "Reflection",
+  "version": "0.1.0",
+  "description": "Reflection — waveform generation, analysis, resonance simulation and sonification workbench",
+  "main": "electron/main.cjs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
+    "electron": "electron .",
+    "package:mac": "npm run build && electron-packager . Reflection --platform=darwin --arch=arm64 --out=release --overwrite --icon=build/icon.icns --app-bundle-id=com.wolfiescoven.reflection --app-version=0.1.0 --ignore=\"^/(src|tests|release|public|samples|node_modules|build/icon\\.png|index\\.html|tsconfig\\.json|vite\\.config\\.ts)\""
+  },
+  "devDependencies": {
+    "typescript": "5.6.3",
+    "vite": "5.4.11",
+    "@vitejs/plugin-react": "4.3.4",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@types/katex": "0.16.8",
+    "vitest": "2.1.8",
+    "electron": "33.2.1",
+    "@electron/packager": "18.3.6"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zustand": "4.5.5",
+    "katex": "0.16.11",
+    "react-resizable-panels": "2.1.7",
+    "@fontsource/rajdhani": "5.3.0",
+    "@fontsource/exo-2": "5.3.0",
+    "@fontsource/jetbrains-mono": "5.3.0"
+  }
+}
