@@ -44,3 +44,18 @@ Electron 33.2.1 was run under Xvfb in the build container. It confirmed three th
 - Pressing Play changes the status to *PLAYING* and the audio clock advances (1.99 s after 2 s, 44.1 kHz).
 
 The macOS arm64 bundle itself was packaged and ad-hoc signed on a Linux VM. It has not been launched on macOS by the builder.
+
+## Auto-updater (v0.2.0)
+
+These tests ran in Electron 33.2.1 under Xvfb against a local update server, using a throwaway test key.
+
+| Scenario | Expected | Result |
+|---|---|---|
+| Newer signed release (0.2.0 → 0.2.1) | Downloads, shows "Reload to update", reloads into 0.2.1 | ✅ |
+| Relaunch after updating | Starts on 0.2.1; reports "up to date" | ✅ |
+| Manifest edited after signing (notes changed) | Refused: "signature is invalid" | ✅ |
+| Manifest pointed at a different bundle | Refused: "signature is invalid" | ✅ |
+| Valid signature, corrupted download | Refused: "failed its checksum" | ✅ |
+| Release whose page never starts (0.2.2) | Rolled back to 0.2.0 within 20 s, window reloaded, 0.2.2 blocklisted | ✅ |
+
+Unit tests in `tests/update-sig.test.ts` cover canonical JSON, version ordering and signature tamper detection.

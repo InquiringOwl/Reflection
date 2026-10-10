@@ -2,17 +2,23 @@
 
 **Reflection** is a research-oriented waveform workbench. Pick a documented phenomenon, see its frequency in Hz, view it on an oscilloscope, spectrum and spectrogram, change a copy, compare it with others, and listen to a clearly labelled audio version. The mathematics updates live as you move the controls.
 
+**Version 0.2.0** adds signed automatic updates (see [`UPDATES.md`](UPDATES.md)). What changed in each version is in [`CHANGELOG.md`](CHANGELOG.md).
+
 This is **Milestone 1 (usable core)** of `Waveforms_Program_Build_Specification.md` v1.2. The working name "Waveforms" was changed to *Reflection* at the owner's request.
 
 ---
 
 ## 1. Opening the app (macOS, Apple Silicon)
 
-1. In Finder, open your **Waveforms** folder and double-click **`Reflection-mac-arm64.zip`**. This creates **Reflection.app**.
+1. Download **`Reflection-mac-arm64.zip`** from the [latest release](https://github.com/InquiringOwl/Reflection/releases/latest) and double-click it. This creates **Reflection.app**.
 2. Drag **Reflection.app** to *Applications*. This step is optional.
 3. Open it. The app has an ad-hoc signature, not an Apple Developer ID. If macOS says it "cannot verify the developer", **right-click → Open → Open** once. Later launches open normally.
 
 Audio never starts by itself. Press **▶** in the *Master* section, or press the space bar. The starting volume is low (0.15).
+
+### Updates
+
+Reflection checks GitHub for updates when it starts and every 4 hours after that. When a new version has downloaded, an amber **Reload to update** button appears in the top bar. You can also check manually from the menu bar with **Reflection → Check for Updates…**. Every update is signature-verified before it is installed, and a failed update rolls back automatically. Details are in [`UPDATES.md`](UPDATES.md).
 
 ## 2. A five-minute tour
 
@@ -79,7 +85,7 @@ The three CSV files in `samples/` are **synthetic test files** for trying the im
 
 ## 5. Validation
 
-`npm test` runs 18 automated checks against the spec's acceptance criteria. All pass. Results are in [`VALIDATION.md`](VALIDATION.md).
+`npm test` runs 21 automated checks (18 acceptance + 3 update-signing) against the spec's acceptance criteria. All pass. Results are in [`VALIDATION.md`](VALIDATION.md).
 
 ## 6. Known limitations
 
@@ -98,7 +104,7 @@ The three CSV files in `samples/` are **synthetic test files** for trying the im
 - A series replayed faster than real time is low-pass filtered (4th-order Butterworth at 0.45 × new Nyquist) before decimation. Playback audio is peak-normalised for listening. Stored values are untouched.
 - Local storage holds about 5 MB. Very large imported series are left out of autosave; use **Export → session** to keep them.
 - The glossary's word origins come from the Online Etymology Dictionary. A few eponym entries (Nyquist, Fourier, Gibbs, Raman, Q) are marked *source pending verification*.
-- The app is unsigned (ad-hoc signature only) and has not been notarized.
+- The app is unsigned (ad-hoc signature only) and has not been notarized. For that reason the standard Electron updater can't be used; Reflection uses its own signed-bundle updater instead (see `UPDATES.md`).
 
 ## 7. For developers
 
@@ -120,7 +126,9 @@ npm run package:mac  # Apple Silicon .app → release/
 | `src/state/` | Single zustand store (plots, maths and audio all read it), presets, session persistence |
 | `src/data/` | Schema, catalog + sources, glossary, live-equation definitions |
 | `src/ui/` | React components; canvas plotting; spectrogram Web Worker |
-| `electron/main.cjs` | Desktop shell; serves `dist/` via a private secure `app://` scheme so worklet/worker modules load |
+| `electron/main.cjs` | Desktop shell; serves the app via a private secure `app://` scheme so worklet/worker modules load |
+| `electron/updater.cjs`, `update-sig.cjs`, `preload.cjs` | Signed web-bundle updater with rollback, and the minimal page↔shell bridge |
+| `scripts/` | `keygen.mjs` (one-time signing key), `make-update.mjs` (build signed update files) |
 
 **Third-party software (all permissive licences):**
 

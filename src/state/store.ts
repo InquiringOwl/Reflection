@@ -9,7 +9,8 @@ import type { SpectrumScale } from '../dsp/spectrum';
 import type { DataRecord, Transform } from '../data/schema';
 import { entityById, processById, recordHz } from '../data/catalog';
 
-export const APP_VERSION = '0.1.0';
+declare const __APP_VERSION__: string;
+export const APP_VERSION: string = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev';
 export const CH_COLORS = ['#5fd0ff', '#f2a33a', '#4fe0a0', '#ff6fae'];
 export const CH_DASH: number[][] = [[], [7, 4], [2, 3], [9, 3, 2, 3]];
 export const CH_DASH_LABEL = ['solid', 'dashed', 'dotted', 'dash-dot'];

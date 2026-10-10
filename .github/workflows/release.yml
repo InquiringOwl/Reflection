@@ -1,0 +1,99 @@
+# Reflection — test every push, and publish a signed release whenever the
+# version in package.json doesn't have a GitHub Release yet.
+#
+# Needs one repository secret: REFLECTION_SIGNING_KEY (the Ed25519 private key PEM).
+name: Test and release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reflection-release
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Tests and build
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release: ${{ steps.version.outputs.release }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+      - name: Tests
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Is this a new version?
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::v$VERSION is already released — tests only, nothing published."
+          else
+            node scripts/changelog.mjs --version "$VERSION" --check
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::v$VERSION is new — it will be published."
+          fi
+
+  release:
+    name: Publish v${{ needs.test.outputs.version }}
+    needs: test
+    if: needs.test.outputs.release == 'true'
+    runs-on: macos-latest
+    env:
+      VERSION: ${{ needs.test.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build the Mac app
+        run: npm run package:mac
+      - name: Ad-hoc sign and zip
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          codesign --force --deep --sign - release/Reflection-darwin-arm64/Reflection.app
+          ditto -c -k --sequesterRsrc --keepParent release/Reflection-darwin-arm64/Reflection.app "$RUNNER_TEMP/out/Reflection-mac-arm64.zip"
+      - name: Sign the update
+        env:
+          SIGNING_KEY: ${{ secrets.REFLECTION_SIGNING_KEY }}
+        run: |
+          if [ -z "$SIGNING_KEY" ]; then echo "::error::The REFLECTION_SIGNING_KEY secret is missing (Settings → Secrets and variables → Actions)."; exit 1; fi
+          KEY_FILE="$RUNNER_TEMP/signing-key.pem"
+          printf '%s\n' "$SIGNING_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          node scripts/make-update.mjs --key "$KEY_FILE" --out "$RUNNER_TEMP/out" \
+            --notes "$(node scripts/changelog.mjs --version "$VERSION" --summary)"
+          rm -f "$KEY_FILE"
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/changelog.mjs --version "$VERSION" --body > "$RUNNER_TEMP/notes.md"
+          gh release create "v$VERSION" "$RUNNER_TEMP"/out/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Reflection v$VERSION" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --latest

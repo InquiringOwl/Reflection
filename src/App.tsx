@@ -15,6 +15,7 @@ import { RightPanel } from './ui/RightPanel';
 import { Deck } from './ui/Deck';
 import { ImportDialog, ExportDialog } from './ui/Dialogs';
 import { NumInput } from './ui/primitives';
+import { UpdateChip } from './ui/UpdateChip';
 
 function Logo() {
   return (
@@ -57,6 +58,7 @@ function TopBar() {
       <div className="tb-group">
         <button className="btn sm ghost" onClick={() => s.set({ theme: s.theme === 'dark' ? 'light' : 'dark' })} title="Toggle light/dark theme">{s.theme === 'dark' ? '☀ Light' : '☾ Dark'}</button>
       </div>
+      <UpdateChip />
       <div className="tb-group" style={{ paddingRight: 14 }}>
         <span className="status-chip" title={audio.error ?? (audio.ready ? 'Audio engine running (AudioWorklet)' : 'Audio starts when you press play')}>
           <span className={`dot ${audio.error ? 'err' : s.playing ? 'on' : audio.ready ? 'warn' : ''}`} />

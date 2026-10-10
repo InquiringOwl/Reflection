@@ -3,3 +3,5 @@ dist/
 release/
 Reflection.app/
 .DS_Store
+*.pem
+*.zip
